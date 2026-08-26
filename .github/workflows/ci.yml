@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [20, 22, 24]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - name: 单元测试(零依赖 node:test)
+        run: node --test
+      - name: 静态资源引用检查
+        run: node tools/check-assets.mjs
+      - name: JS 语法检查
+        run: |
+          node --check js/calc.js
+          node --check js/app.js

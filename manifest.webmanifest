@@ -1,0 +1,19 @@
+{
+  "name": "期末急救分诊台",
+  "short_name": "急救分诊",
+  "description": "多门课挂科风险一键排查:危重排序 + 病危通知书分享,纯本地计算",
+  "lang": "zh-CN",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#7A0C0C",
+  "theme_color": "#7A0C0C",
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

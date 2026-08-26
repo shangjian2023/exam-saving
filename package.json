@@ -1,0 +1,14 @@
+{
+  "name": "exam-saving",
+  "version": "2.0.0",
+  "private": true,
+  "description": "期末急救分诊台:多门课挂科风险一键排查",
+  "scripts": {
+    "test": "node --test",
+    "check": "node tools/check-assets.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}
