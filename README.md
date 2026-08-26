@@ -22,10 +22,13 @@
 
 期末急救分诊台像医院分诊台一样工作:
 
-- 📋 **多课程病例管理** — 一门课一张病历卡,平时分、平时占比、目标分
-- 🚨 **危重等级分诊** — 每门课自动诊断:已出院 / 轻症 / 重症 / 病危 / 无力回天
+- 📋 **多课程病例管理** — 一门课一张病历卡,平时分、平时占比、目标分、考试日期
+- 🚨 **危重等级分诊** — 每门课自动诊断:已出院 / 轻症 / 重症 / 病危 / 无力回天;有病危课程时页面顶部亮起红光警报
 - 📊 **按危险程度排序** — 「开始分诊」把最急的课排到最前,复习优先级一目了然
-- 📋 **病危通知书** — 一键生成整学期的诊断报告,复制文本或分享链接,病友点开就是你算好的场景
+- ⏰ **考试倒计时** — 每张病历卡可设考试日期,D-x 徽章越近越红,开考当天闪烁示警
+- 🎲 **今日天选科目** — 不知道今晚先看哪门?按病情加权随机抽取,被选中的病历卡心跳高亮
+- 📋 **病危通知书** — 一键生成整学期的诊断报告,支持复制文本、分享链接、导出 canvas 手绘海报图
+- 🎉 **全员出院庆祝** — 所有课都稳过时,自动撒花礼炮
 - 🔮 **摸底估分** — 考完对答案,输入期末估分反推总评
 - 💾 **本地记忆** — 病例自动存 localStorage,下次打开免重填
 - 🔗 **URL 场景分享** — 全部病例编码进链接,无需后端
@@ -72,25 +75,28 @@
 
 - **前端**:HTML5 + CSS3 + Vanilla JS,零依赖、零构建
 - **架构**:计算逻辑(`js/calc.js`,纯函数)与界面(`js/app.js`)分离,经典脚本 + UMD 导出
-- **测试**:Node.js 内置 `node:test`,22 个用例覆盖边界(权重 0/100、浮点、非法输入、编解码回环)
+- **测试**:Node.js 内置 `node:test`,24 个用例覆盖边界(权重 0/100、浮点、非法输入、倒计时、编解码回环)
 - **CI**:GitHub Actions,Node 20/22/24 矩阵跑测试 + 资源引用检查 + 语法检查
 - **部署**:GitHub Pages,推送 main 自动上线
 - **PWA**:manifest + Service Worker(子路径相对路径注册)
+- **动效**:vendor 化 [animate.css](https://github.com/animate-css/animate.css)(MIT)与 [canvas-confetti](https://github.com/catdad/canvas-confetti)(MIT),本地打包不依赖 CDN
 
 ## 📂 项目结构
 
 ```
 exam-saving/
-├── index.html              # 页面结构
-├── css/style.css           # 急救箱红主题样式
-├── js/calc.js              # 纯计算模块(可测试,无 DOM 依赖)
-├── js/app.js               # 界面逻辑与状态管理
-├── sw.js                   # Service Worker(离线缓存)
-├── manifest.webmanifest    # PWA 清单
-├── icons/icon.svg          # 图标
-├── test/calc.test.js       # 单元测试(node:test)
-├── tools/check-assets.mjs  # CI:资源引用检查
-└── .github/workflows/      # CI + Pages 部署
+├── index.html                  # 页面结构
+├── css/style.css               # 急救箱红主题样式
+├── css/vendor/animate.min.css  # animate.css(vendor,MIT)
+├── js/calc.js                  # 纯计算模块(可测试,无 DOM 依赖)
+├── js/app.js                   # 界面逻辑与状态管理
+├── js/vendor/confetti.js       # canvas-confetti(vendor,MIT)
+├── sw.js                       # Service Worker(离线缓存)
+├── manifest.webmanifest        # PWA 清单
+├── icons/icon.svg              # 图标
+├── test/calc.test.js           # 单元测试(node:test)
+├── tools/check-assets.mjs      # CI:资源引用检查
+└── .github/workflows/          # CI + Pages 部署
 ```
 
 ## 🧪 本地开发
@@ -110,12 +116,13 @@ npx serve
 
 ## 🗓️ 更新日志
 
+- **v2.1(2026-08)** — 可玩性升级:考试倒计时徽章、今日天选科目加权抽取、病危通知书 canvas 海报导出、病危红光警报、全员出院撒花;vendor 化 animate.css 与 canvas-confetti
 - **v2.0(2026-08)** — 重构为"急救分诊台":多课程管理、危重排序、病危通知书、URL 分享、摸底估分、PWA;拆分模块架构;补齐测试/CI/Pages/LICENSE;修复原版权重 100% 除零、键盘输入串台、Google Fonts 国内不可达等问题
 - **v1.0(2026-02)** — 单课期末急救计算器(急救箱主题 + 数字键盘 + 戏谑文案)
 
 ## 📄 许可证
 
-[MIT](LICENSE)
+[MIT](LICENSE)。内置动效库 [animate.css](https://github.com/animate-css/animate.css) 与 [canvas-confetti](https://github.com/catdad/canvas-confetti) 同为 MIT 许可,以 vendor 形式随源码分发。
 
 ## 🙏 致谢
 

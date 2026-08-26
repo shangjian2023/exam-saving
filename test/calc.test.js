@@ -144,12 +144,29 @@ test('空列表与 null 容错', () => {
   assert.deepStrictEqual(FirstAid.triage(null).summary.total, 0);
 });
 
+/* ---------- daysUntil ---------- */
+
+test('倒计时:未来日期按日历日差计算', () => {
+  const now = new Date('2026-06-15T23:30:00');
+  assert.strictEqual(FirstAid.daysUntil('2026-06-16', now), 1);
+  assert.strictEqual(FirstAid.daysUntil('2026-06-15', now), 0);
+  assert.strictEqual(FirstAid.daysUntil('2026-06-14', now), -1);
+  assert.strictEqual(FirstAid.daysUntil('2026-07-15', now), 30);
+});
+
+test('倒计时:非法输入返回 null', () => {
+  assert.strictEqual(FirstAid.daysUntil(''), null);
+  assert.strictEqual(FirstAid.daysUntil('2026-6-5'), null);
+  assert.strictEqual(FirstAid.daysUntil('2026-13-01'), null);
+  assert.strictEqual(FirstAid.daysUntil(null), null);
+});
+
 /* ---------- encodeState / decodeState ---------- */
 
-test('URL 状态编解码回环:中文名 + 小数', () => {
+test('URL 状态编解码回环:中文名 + 小数 + 考试日期', () => {
   const courses = [
-    { name: '高等数学(下)', usual: 85.5, usualWeight: 40, goal: 60 },
-    { name: '大学英语', usual: 92, usualWeight: 30, goal: 80 }
+    { name: '高等数学(下)', usual: 85.5, usualWeight: 40, goal: 60, examDate: '2026-06-20' },
+    { name: '大学英语', usual: 92, usualWeight: 30, goal: 80, examDate: '' }
   ];
   const decoded = FirstAid.decodeState(FirstAid.encodeState(courses));
   assert.deepStrictEqual(decoded, courses);

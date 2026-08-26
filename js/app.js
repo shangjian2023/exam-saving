@@ -65,12 +65,13 @@
       name: row.name || '',
       usual: row.usual,
       usualWeight: row.usualWeight,
-      goal: row.goal
+      goal: row.goal,
+      examDate: row.examDate || ''
     };
   }
 
   function newCourse() {
-    return { id: uid(), name: '', usual: '', usualWeight: 40, goal: 60 };
+    return { id: uid(), name: '', usual: '', usualWeight: 40, goal: 60, examDate: '' };
   }
 
   function uid() {
@@ -92,7 +93,8 @@
           name: typeof c.name === 'string' ? c.name : '',
           usual: c.usual,
           usualWeight: c.usualWeight,
-          goal: c.goal
+          goal: c.goal,
+          examDate: typeof c.examDate === 'string' ? c.examDate : ''
         };
       }) : [];
     } catch (e) {
@@ -178,6 +180,7 @@
     fields.appendChild(makeField(course, 'usual', '平时分', '85'));
     fields.appendChild(makeField(course, 'usualWeight', '平时占比 %', '40'));
     fields.appendChild(makeField(course, 'goal', '目标总分', '60'));
+    fields.appendChild(makeDateField(course));
     el.appendChild(fields);
 
     var result = document.createElement('div');
@@ -187,13 +190,18 @@
     badge.className = 'sev-badge';
     var need = document.createElement('span');
     need.className = 'case-need';
+    var dBadge = document.createElement('span');
+    dBadge.className = 'd-badge';
+    dBadge.hidden = true;
     result.appendChild(badge);
     result.appendChild(need);
+    result.appendChild(dBadge);
     el.appendChild(result);
 
     el.appendChild(renderProbe(course));
 
     updateCase(el, course);
+    updateCountdown(el, course);
     return el;
   }
 
@@ -222,6 +230,50 @@
     });
     wrap.appendChild(input);
     return wrap;
+  }
+
+  /* 考试日期字段 + 倒计时徽章 */
+  function makeDateField(course) {
+    var wrap = document.createElement('div');
+    wrap.className = 'field fieldDate';
+
+    var lab = document.createElement('label');
+    lab.textContent = '考试日期(选填)';
+    wrap.appendChild(lab);
+
+    var input = document.createElement('input');
+    input.type = 'date';
+    input.setAttribute('aria-label', '考试日期');
+    input.value = course.examDate || '';
+    input.addEventListener('input', function () {
+      course.examDate = input.value;
+      var card = wrap.closest('.case');
+      updateCountdown(card, course);
+      save();
+    });
+    wrap.appendChild(input);
+    return wrap;
+  }
+
+  function updateCountdown(cardEl, course) {
+    if (!cardEl) return;
+    var dBadge = cardEl.querySelector('.d-badge');
+    var d = FirstAid.daysUntil(course.examDate || '');
+    if (d === null) {
+      dBadge.hidden = true;
+      return;
+    }
+    dBadge.hidden = false;
+    dBadge.className = 'd-badge';
+    if (d < 0) {
+      dBadge.textContent = '已考完';
+    } else if (d === 0) {
+      dBadge.textContent = '⚔️ 今日开考';
+      dBadge.classList.add('d-today');
+    } else {
+      dBadge.textContent = 'D-' + d;
+      if (d <= 3) dBadge.classList.add('d-soon');
+    }
   }
 
   /* 摸底:考完对答案,估总评 */
@@ -324,6 +376,8 @@
     $('#sumDischarged').textContent = t.summary.discharged;
 
     var v = $('#verdict');
+    document.body.classList.toggle('alert-mode',
+      (t.summary.critical + t.summary.beyond) > 0 && t.summary.pending === 0);
     if (!t.entries.length) {
       v.textContent = '还没有病例,先添加一门课。';
       return;
@@ -383,7 +437,16 @@
       if (t.summary.discharged) parts.push('已出院 ' + t.summary.discharged);
       toast(parts.length ? '分诊完成:' + parts.join(' · ') : '先补全病例数据');
       casesEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+      // 全员出院:撒花庆祝
+      if (t.summary.total > 0 && t.summary.pending === 0 &&
+          t.summary.discharged === t.summary.total) {
+        celebrate();
+        toast('🎉 全员出院!期末周请开始享受生活');
+      }
     });
+
+    $('#btnPick').addEventListener('click', openPick);
 
     $('#btnNotice').addEventListener('click', openNotice);
     $('#statsBadge').addEventListener('click', openLuck);
@@ -478,6 +541,7 @@
     $('#btnCopyText').addEventListener('click', function () {
       copyToClipboard(noticeText, '通知书文本已复制,去粘贴吧');
     });
+    $('#btnPoster').addEventListener('click', drawPoster);
     $('#btnShareLink').addEventListener('click', function () {
       if (navigator.share) {
         navigator.share({
@@ -512,6 +576,209 @@
     try { ok = document.execCommand('copy'); } catch (e) {}
     document.body.removeChild(ta);
     return ok;
+  }
+
+  /* ---------- 今日天选科目 ---------- */
+
+  var PICK_ADVICE = [
+    '天意如此,今晚就它了。放下手机,翻开课本。',
+    '系统已替你做出选择:逃避可耻且没用。',
+    '缘分到了。这门课正在等你,别让它等太久。',
+    '命运的齿轮开始转动——从这门课开始复习。',
+    '别问为什么是它,问就是玄学。快去看书!'
+  ];
+
+  function openPick() {
+    var t = FirstAid.triage(state.courses);
+    var pool = t.entries.filter(function (e) {
+      return e.result.ok && e.result.status !== 'discharged';
+    });
+    if (!pool.length) {
+      celebrate();
+      toast('全员出院,天选轮空——直接开香槟吧 🍾');
+      return;
+    }
+    // 病情越重权重越大:beyond×4 / critical×3 / severe×2 / mild×1
+    var weightMap = { beyond: 4, critical: 3, severe: 2, mild: 1 };
+    var bag = [];
+    pool.forEach(function (e) {
+      for (var i = 0; i < (weightMap[e.result.status] || 1); i++) bag.push(e);
+    });
+    var chosen = bag[Math.floor(Math.random() * bag.length)];
+
+    var name = chosen.name || '未命名课程';
+    var need = chosen.result.status === 'discharged' ? '' :
+      '期末至少 ' + chosen.result.needed + ' 分,';
+    $('#pickCourse').textContent = name;
+    $('#pickAdvice').textContent = need + PICK_ADVICE[Math.floor(Math.random() * PICK_ADVICE.length)];
+
+    // 重播入场动画
+    var dice = document.querySelector('.pick-dice');
+    var course = $('#pickCourse');
+    [dice, course].forEach(function (el) {
+      el.style.animation = 'none';
+      void el.offsetWidth;
+      el.style.animation = '';
+    });
+
+    $('#pickOverlay').classList.add('show');
+    ping();
+
+    // 高亮被选中的病历卡
+    sortCourses();
+    renderAll();
+    var card = casesEl.querySelector('[data-id="' + chosen.id + '"]');
+    if (card) {
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      card.classList.add('animate__animated', 'animate__heartBeat');
+      card.addEventListener('animationend', function () {
+        card.classList.remove('animate__animated', 'animate__heartBeat');
+      }, { once: true });
+    }
+  }
+
+  /* ---------- 撒花 ---------- */
+
+  function celebrate() {
+    if (typeof confetti !== 'function') return;
+    try {
+      var fire = function (x, angle) {
+        confetti({
+          particleCount: 90,
+          spread: 70,
+          origin: { x: x, y: 0.7 },
+          angle: angle,
+          colors: ['#DC143C', '#B91C1C', '#FFD700', '#FFFFFF', '#4CAF50']
+        });
+      };
+      fire(0.2, 60);
+      fire(0.8, 120);
+      setTimeout(function () { fire(0.5, 90); }, 250);
+    } catch (e) { /* 某些环境 canvas 不可用时静默 */ }
+  }
+
+  /* ---------- 病危通知书海报(canvas 绘制,无依赖) ---------- */
+
+  function drawPoster() {
+    var t = FirstAid.triage(state.courses);
+    var W = 640;
+    var rowH = 74;
+    var H = 430 + t.entries.length * rowH + 120;
+    var canvas = document.createElement('canvas');
+    canvas.width = W;
+    canvas.height = H;
+    var ctx = canvas.getContext('2d');
+
+    // 底色
+    var bg = ctx.createLinearGradient(0, 0, 0, H);
+    bg.addColorStop(0, '#7A0C0C');
+    bg.addColorStop(1, '#4A0505');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+
+    // 红十字水印
+    ctx.save();
+    ctx.globalAlpha = 0.05;
+    ctx.fillStyle = '#fff';
+    ctx.translate(W - 90, 90);
+    ctx.rotate(0.26);
+    ctx.fillRect(-18, -70, 36, 140);
+    ctx.fillRect(-70, -18, 140, 36);
+    ctx.restore();
+
+    // 标题章
+    ctx.strokeStyle = '#FFD9D9';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(140, 44, W - 280, 64);
+    ctx.fillStyle = '#FFECEC';
+    ctx.font = 'bold 38px "PingFang SC","Microsoft YaHei",sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('病 危 通 知 书', W / 2, 90);
+
+    ctx.font = '14px Consolas,monospace';
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.fillText('诊断时间 ' + new Date().toLocaleString('zh-CN', { hour12: false }), W / 2, 132);
+
+    // 分隔线
+    ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+    ctx.setLineDash([8, 6]);
+    ctx.beginPath();
+    ctx.moveTo(48, 156);
+    ctx.lineTo(W - 48, 156);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // 病例行
+    var SEV_COLOR = {
+      discharged: '#7BD88F', mild: '#A3D977', severe: '#F6C453',
+      critical: '#FF7B72', beyond: '#D64545', pending: '#B8B8B8'
+    };
+    var y = 196;
+    t.entries.forEach(function (e) {
+      var st = e.result.ok ? e.result.status : 'pending';
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 24px "PingFang SC","Microsoft YaHei",sans-serif';
+      ctx.fillText((e.name || '未命名课程').slice(0, 12), 60, y);
+
+      ctx.textAlign = 'right';
+      ctx.font = 'bold 26px Consolas,monospace';
+      ctx.fillStyle = SEV_COLOR[st];
+      var need = !e.result.ok ? '数据不全'
+        : st === 'discharged' ? '稳过'
+        : '需 ' + e.result.needed + ' 分';
+      ctx.fillText(need, W - 170, y);
+
+      ctx.font = '18px "PingFang SC","Microsoft YaHei",sans-serif';
+      ctx.fillStyle = SEV_COLOR[st];
+      ctx.fillText(SEV_LABEL[st], W - 60, y);
+
+      // 等级色条
+      ctx.fillStyle = SEV_COLOR[st];
+      ctx.fillRect(44, y - 26, 5, 36);
+
+      // 摸底日期徽章
+      var d = FirstAid.daysUntil(e.examDate || '');
+      if (d !== null) {
+        ctx.font = '15px Consolas,monospace';
+        ctx.fillStyle = d <= 3 && d >= 0 ? '#FF7B72' : 'rgba(255,255,255,0.5)';
+        ctx.textAlign = 'left';
+        ctx.fillText(d < 0 ? '已考完' : d === 0 ? '今日开考' : 'D-' + d, 60, y + 26);
+      }
+      y += rowH;
+    });
+
+    // 医嘱 + 落款
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+    ctx.font = 'italic 17px "PingFang SC","Microsoft YaHei",sans-serif';
+    wrapText(ctx, $('#noticeAdvice').textContent || '医嘱:先救最急的,然后睡觉。', W / 2, y + 16, W - 140, 26);
+    ctx.font = '14px Consolas,monospace';
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.fillText('期末急救分诊台 · shangjian2023.github.io/exam-saving', W / 2, H - 40);
+
+    var a = document.createElement('a');
+    a.download = '病危通知书.png';
+    a.href = canvas.toDataURL('image/png');
+    a.click();
+    toast('海报已生成,长按/右键保存');
+  }
+
+  function wrapText(ctx, text, cx, y, maxWidth, lineHeight) {
+    var chars = String(text).split('');
+    var line = '';
+    var startY = y;
+    for (var i = 0; i < chars.length; i++) {
+      var test = line + chars[i];
+      if (ctx.measureText(test).width > maxWidth && line) {
+        ctx.fillText(line, cx, startY);
+        line = chars[i];
+        startY += lineHeight;
+      } else {
+        line = test;
+      }
+    }
+    if (line) ctx.fillText(line, cx, startY);
   }
 
   /* ---------- 急救运势(彩蛋) ---------- */

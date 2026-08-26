@@ -629,13 +629,100 @@ body::after { bottom: 120px; left: -90px; transform: rotate(-10deg); }
 }
 .foot a { color: rgba(255, 255, 255, 0.7); }
 
+/* ---------- 病危红光氛围 ---------- */
+
+.alert-glow {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: linear-gradient(90deg, transparent, var(--red), var(--accent, #FF4444), var(--red), transparent);
+  opacity: 0;
+  z-index: 50;
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+}
+body.alert-mode .alert-glow {
+  opacity: 1;
+  animation: alertPulse 1.6s ease-in-out infinite;
+}
+@keyframes alertPulse {
+  0%, 100% { height: 6px; opacity: 0.65; }
+  50% { height: 14px; opacity: 1; }
+}
+
+/* ---------- 考试倒计时徽章 ---------- */
+
+.d-badge {
+  flex: none;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 8px;
+  padding: 3px 8px;
+  background: #F3E3E3;
+  color: var(--ink-2);
+}
+.d-badge.d-soon { background: #FDECEC; color: var(--sev-critical); }
+.d-badge.d-today { background: var(--sev-critical); color: #fff; animation: alertPulse2 1.2s infinite; }
+@keyframes alertPulse2 {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+/* ---------- 操作区双按钮 ---------- */
+
+.actions-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.btn-dice {
+  background: #fff;
+  color: var(--red-dark);
+  font-size: 15px;
+  padding: 13px;
+}
+.btn-dice:hover { transform: translateY(-2px) rotate(-2deg); }
+
+/* ---------- 天选弹层 ---------- */
+
+.pick-dice {
+  text-align: center;
+  font-size: 52px;
+  margin-bottom: 4px;
+  line-height: 1.2;
+}
+.pick-course {
+  text-align: center;
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--red-dark);
+  margin-bottom: 12px;
+}
+
+/* ---------- 通知书三按钮 ---------- */
+
+.notice-actions { grid-template-columns: 1fr 1fr 1fr; }
+
+/* ---------- 考试日期字段 ---------- */
+
+.field input[type='date'] {
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
 /* ---------- 响应式 & 无障碍 ---------- */
 
 @media (max-width: 400px) {
   .case-fields { grid-template-columns: 1fr 1fr; }
-  .case-fields .field:last-child { grid-column: 1 / -1; }
+  .case-fields .fieldDate { grid-column: 1 / -1; }
   .report-grid { grid-template-columns: repeat(2, 1fr); }
   .brand-name { font-size: 18px; }
+  .notice-actions { grid-template-columns: 1fr; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -3,13 +3,15 @@
  * 子路径部署(GitHub Pages /exam-saving/),缓存键与请求都用相对路径。
  * 策略:应用外壳 cache-first;其他同源 GET 网络优先、失败回缓存。
  */
-var CACHE = 'first-aid-triage-v2';
+var CACHE = 'first-aid-triage-v3';
 var SHELL = [
   './',
   './index.html',
   './css/style.css',
+  './css/vendor/animate.min.css',
   './js/calc.js',
   './js/app.js',
+  './js/vendor/confetti.js',
   './manifest.webmanifest',
   './icons/icon.svg'
 ];

@@ -151,6 +151,23 @@
     return { entries: entries, summary: summary };
   }
 
+  /* ---------- 考试倒计时 ---------- */
+
+  /**
+   * 距考试还有几天(按本地日历日计算,当天为 0,已考过为负)。
+   * @param {string} dateStr 'YYYY-MM-DD'
+   * @param {Date} [now] 可注入的"当前时间",测试用
+   * @returns {number|null} 非法/未填返回 null
+   */
+  function daysUntil(dateStr, now) {
+    if (typeof dateStr !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return null;
+    var today = now ? new Date(now) : new Date();
+    var target = new Date(dateStr + 'T00:00:00');
+    if (isNaN(target.getTime())) return null;
+    var start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    return Math.round((target - start) / 86400000);
+  }
+
   /* ---------- URL 状态编解码(分享链接用) ---------- */
 
   function utf8ToBase64Url(str) {
@@ -183,12 +200,14 @@
    */
   function encodeState(courses) {
     var compact = (courses || []).map(function (c) {
-      return {
+      var row = {
         n: c.name || '',
         u: Number(c.usual) || 0,
         w: Number(c.usualWeight) || 0,
         g: Number(c.goal) != null ? Number(c.goal) : 60
       };
+      if (c.examDate) row.d = c.examDate;
+      return row;
     });
     return utf8ToBase64Url(JSON.stringify({ v: 1, c: compact }));
   }
@@ -214,7 +233,8 @@
         name: typeof r.n === 'string' ? r.n.slice(0, 30) : '',
         usual: Number(r.u) || 0,
         usualWeight: Number(r.w) || 0,
-        goal: isNum(r.g) ? Number(r.g) : 60
+        goal: isNum(r.g) ? Number(r.g) : 60,
+        examDate: /^\d{4}-\d{2}-\d{2}$/.test(r.d) ? r.d : ''
       };
     });
     return courses.slice(0, 20);
@@ -225,6 +245,7 @@
     classify: classify,
     predictTotal: predictTotal,
     triage: triage,
+    daysUntil: daysUntil,
     encodeState: encodeState,
     decodeState: decodeState
   };

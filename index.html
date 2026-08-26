@@ -11,11 +11,14 @@
   <meta property="og:title" content="期末急救分诊台">
   <meta property="og:description" content="多门课挂科风险一键排查:危重排序 + 病危通知书分享">
   <meta property="og:type" content="website">
+  <link rel="stylesheet" href="css/vendor/animate.min.css">
   <link rel="stylesheet" href="css/style.css">
   <script src="js/calc.js" defer></script>
+  <script src="js/vendor/confetti.js" defer></script>
   <script src="js/app.js" defer></script>
 </head>
 <body>
+  <div class="alert-glow" aria-hidden="true"></div>
   <div class="container">
     <header class="topbar">
       <div class="brand">
@@ -49,7 +52,10 @@
         🚑 开始分诊
         <span class="sub">按危重程度重新排序,最急的排最前</span>
       </button>
-      <button class="btn btn-notice" id="btnNotice" type="button">📋 生成病危通知书</button>
+      <div class="actions-row">
+        <button class="btn btn-notice" id="btnNotice" type="button">📋 病危通知书</button>
+        <button class="btn btn-dice" id="btnPick" type="button">🎲 今日天选</button>
+      </div>
     </div>
 
     <footer class="foot">
@@ -70,7 +76,20 @@
       <div class="notice-actions">
         <button class="btn btn-solid" id="btnCopyText" type="button">📋 复制文本</button>
         <button class="btn btn-ghost" id="btnShareLink" type="button">🔗 复制/分享链接</button>
+        <button class="btn btn-ghost" id="btnPoster" type="button">🖼️ 保存海报</button>
       </div>
+    </div>
+  </div>
+
+  <!-- 今日天选科目 -->
+  <div class="overlay" id="pickOverlay" role="dialog" aria-modal="true" aria-labelledby="pickTitle">
+    <div class="modal">
+      <button class="modal-close" data-close type="button" aria-label="关闭">×</button>
+      <div class="pick-dice animate__animated animate__bounceIn">🎲</div>
+      <div class="luck-title" id="pickTitle">今日天选科目</div>
+      <p class="pick-course animate__animated animate__heartBeat animate__delay-1s" id="pickCourse"></p>
+      <p class="notice-advice" id="pickAdvice"></p>
+      <button class="btn btn-solid" style="width:100%" data-close type="button">认命,今晚就复习它</button>
     </div>
   </div>
 
